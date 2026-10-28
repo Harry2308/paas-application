@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NERDS uc – Wild Cam Log</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f2; color: #222; }
+    header { background: #2f4f2f; color: #fff; padding: 1rem 2rem; }
+    header h1 { margin: 0; font-size: 1.4rem; }
+    main { padding: 1rem 2rem; max-width: 1200px; margin: auto; }
+    form.entry { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem;
+                 background: #fff; padding: 1rem; border-radius: 6px; box-shadow: 0 1px 3px #0002; }
+    label { display: flex; flex-direction: column; font-size: .85rem; gap: .25rem; }
+    input, textarea, select, button { font: inherit; padding: .4rem; }
+    button { background: #2f6f2f; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; background: #fff; margin-top: 1rem; }
+    th, td { padding: .5rem; border-bottom: 1px solid #ddd; text-align: left; font-size: .9rem; }
+    th { background: #e3eadf; }
+    .flash { padding: .5rem 1rem; border-radius: 4px; margin-bottom: .5rem; }
+    .flash.ok { background: #d8f0d8; } .flash.error { background: #f6d6d6; }
+    .del { background: #a33; padding: .2rem .5rem; }
+    footer { text-align: center; font-size: .8rem; color: #666; padding: 1rem; }
+  </style>
+</head>
+<body>
+<header><h1>🦌 NERDS uc – Wild Cam Observation Log</h1></header>
+<main>
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+
+  <h2>New sighting</h2>
+  <form class="entry" method="post" action="{{ url_for('add') }}">
+    <label>Stream *<input name="stream" list="streams" required placeholder="e.g. Brooks Falls Cam"></label>
+    <label>Animal *<input name="animal" list="animals" required placeholder="e.g. Brown bear"></label>
+    <label>Seen from *<input type="datetime-local" name="seen_from" value="{{ now }}" required></label>
+    <label>Seen until<input type="datetime-local" name="seen_until"></label>
+    <label>Count<input type="number" name="count" min="1" value="1"></label>
+    <label>Observer<input name="observer"></label>
+    <label style="grid-column: 1 / -1">Notes<textarea name="notes" rows="2"></textarea></label>
+    <button type="submit">Log sighting</button>
+  </form>
+  <datalist id="streams">{% for s in streams %}<option value="{{ s }}">{% endfor %}</datalist>
+  <datalist id="animals">{% for a in animals %}<option value="{{ a }}">{% endfor %}</datalist>
+
+  <h2>Log ({{ sightings|length }} entries)</h2>
+  <form method="get">
+    <select name="stream" onchange="this.form.submit()">
+      <option value="">All streams</option>
+      {% for s in streams %}<option {% if s == stream_filter %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+    <button type="button" onclick="window.print()">Print</button>
+  </form>
+  <table>
+    <tr><th>#</th><th>Stream</th><th>Animal</th><th>From</th><th>Until</th><th>Count</th><th>Observer</th><th>Notes</th><th></th></tr>
+    {% for s in sightings %}
+    <tr>
+      <td>{{ s.id }}</td><td>{{ s.stream }}</td><td>{{ s.animal }}</td>
+      <td>{{ s.seen_from.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>{{ s.seen_until.strftime('%Y-%m-%d %H:%M') if s.seen_until else '' }}</td>
+      <td>{{ s.count }}</td><td>{{ s.observer or '' }}</td><td>{{ s.notes or '' }}</td>
+      <td><form method="post" action="{{ url_for('delete', sighting_id=s.id) }}">
+        <button class="del" onclick="return confirm('Delete entry?')">✕</button></form></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">No sightings logged yet.</td></tr>
+    {% endfor %}
+  </table>
+</main>
+<footer>Served by node: <strong>{{ node }}</strong></footer>
+</body>
+</html>

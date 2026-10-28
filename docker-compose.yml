@@ -1,0 +1,23 @@
+# Local test setup: app + PostgreSQL.
+# On the worker VMs, run only the app container and point DATABASE_URL at the dedicated DB server.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: wildcam
+      POSTGRES_PASSWORD: wildcam
+      POSTGRES_DB: wildcam
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  web:
+    build: ./app
+    environment:
+      DATABASE_URL: postgresql://wildcam:wildcam@db:5432/wildcam
+      SECRET_KEY: change-me
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    restart: unless-stopped
+volumes:
+  pgdata:
