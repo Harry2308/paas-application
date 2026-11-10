@@ -2,7 +2,7 @@ name: build-image
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths: ["app/**", ".github/workflows/docker.yml"]
   workflow_dispatch:
 
