@@ -20,7 +20,27 @@ python app.py
 ```
 Open http://localhost:8000. Without `DATABASE_URL` set, the app uses a local SQLite file.
 
+## Container image (CI)
+Every push to `main` that touches `app/` builds the image with GitHub Actions
+(`.github/workflows/docker.yml`) and pushes it to GHCR:
+
+```
+ghcr.io/harry2308/paas-application:latest      # newest build
+ghcr.io/harry2308/paas-application:sha-<short> # pinned to a commit
+```
+
 ## Run on a worker VM
+Using the prebuilt image:
+```bash
+docker pull ghcr.io/harry2308/paas-application:latest
+docker run -d --name wildcam --restart unless-stopped -p 8000:8000 \
+  -e DATABASE_URL=postgresql://<user>:<password>@db.infra.pve.homelab.local:5432/<db> \
+  -e SECRET_KEY=<same-on-all-workers> \
+  -e NODE_NAME=$(hostname) \
+  ghcr.io/harry2308/paas-application:latest
+```
+
+Or build locally:
 ```bash
 cd app
 docker build -t wildcam .

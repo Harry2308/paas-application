@@ -9,7 +9,7 @@ Configuration via environment variables:
 import os
 import socket
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -38,7 +38,7 @@ class Sighting(db.Model):
     count = db.Column(db.Integer, default=1)
     observer = db.Column(db.String(80))
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 with app.app_context():
@@ -86,6 +86,10 @@ def add():
         seen_until = parse_dt(f.get("seen_until"))
     except ValueError:
         seen_from = None
+    try:
+        count = max(1, int(f.get("count") or 1))
+    except ValueError:
+        count = 1
     if not stream or not animal or not seen_from:
         flash("Stream, animal and 'seen from' are required.", "error")
         return redirect(url_for("index"))
@@ -97,7 +101,7 @@ def add():
         animal=animal,
         seen_from=seen_from,
         seen_until=seen_until,
-        count=max(1, int(f.get("count") or 1)),
+        count=count,
         observer=f.get("observer", "").strip() or None,
         notes=f.get("notes", "").strip() or None,
     ))
